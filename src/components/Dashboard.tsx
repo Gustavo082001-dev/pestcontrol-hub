@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Activity, CheckCircle, Clock, Users } from 'lucide-react';
 import { SetorManager, type SectorData, hospitalData } from '../lib/hospitalData';
 import { Card } from './ui/card';
-import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
+import SectorModal from './SectorModal';
 
 interface DashboardProps {
   setorManager: SetorManager;
@@ -13,53 +13,15 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ setorManager, onRefresh }) => {
   const [selectedSector, setSelectedSector] = useState<SectorData | null>(null);
-  const [executor, setExecutor] = useState('');
-  const [responsavel, setResponsavel] = useState('');
-  const [selectedBloco, setSelectedBloco] = useState('');
-  const [selectedSetor, setSelectedSetor] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const stats = setorManager.getStatistics();
   const todayRecords = setorManager.getTodayRecords();
 
-  useEffect(() => {
-    // Load saved executor and responsavel from localStorage
-    const savedExecutor = localStorage.getItem('pest-control-executor');
-    const savedResponsavel = localStorage.getItem('pest-control-responsavel');
-    if (savedExecutor) setExecutor(savedExecutor);
-    if (savedResponsavel) setResponsavel(savedResponsavel);
-  }, []);
-
-  const handleExecutorChange = (value: string) => {
-    setExecutor(value);
-    localStorage.setItem('pest-control-executor', value);
-  };
-
-  const handleResponsavelChange = (value: string) => {
-    setResponsavel(value);
-    localStorage.setItem('pest-control-responsavel', value);
-  };
-
   const handleSectorClick = (bloco: string, pavimento: string, setor: string) => {
     const sector = setorManager.getSector(bloco, pavimento, setor);
     setSelectedSector(sector || null);
-    setSelectedBloco(bloco);
-    setSelectedSetor(setor);
-  };
-
-  const handleAction = () => {
-    if (!selectedSector || !executor || !responsavel) return;
-
-    const { bloco, pavimento, setor, status } = selectedSector;
-
-    if (status === 'pending') {
-      setorManager.completeSetor(bloco, pavimento, setor, executor, responsavel);
-    } else if (status === 'completed') {
-      setorManager.resetSetor(bloco, pavimento, setor);
-    }
-
-    const updatedSector = setorManager.getSector(bloco, pavimento, setor);
-    setSelectedSector(updatedSector || null);
-    onRefresh();
+    setIsModalOpen(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -91,39 +53,6 @@ const Dashboard: React.FC<DashboardProps> = ({ setorManager, onRefresh }) => {
     );
   };
 
-  const getActionButton = () => {
-    if (!selectedSector || !executor || !responsavel) {
-      return (
-        <Button disabled className="w-full">
-          Selecione um setor e preencha os campos
-        </Button>
-      );
-    }
-
-    const { status } = selectedSector;
-
-    if (status === 'pending') {
-      return (
-        <Button onClick={handleAction} className="w-full btn-success">
-          <CheckCircle className="w-4 h-4 mr-2" />
-          Marcar como Concluído
-        </Button>
-      );
-    } else if (status === 'completed') {
-      return (
-        <Button onClick={handleAction} variant="outline" className="w-full">
-          <Activity className="w-4 h-4 mr-2" />
-          Reaplicar Dedetização
-        </Button>
-      );
-    } else {
-      return (
-        <Button disabled className="w-full">
-          Em andamento...
-        </Button>
-      );
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -140,39 +69,13 @@ const Dashboard: React.FC<DashboardProps> = ({ setorManager, onRefresh }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Executor do Dia
-              </label>
-              <input
-                type="text"
-                value={executor}
-                onChange={(e) => handleExecutorChange(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                placeholder="Nome do executor"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Responsável do Setor
-              </label>
-              <input
-                type="text"
-                value={responsavel}
-                onChange={(e) => handleResponsavelChange(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                placeholder="Nome do responsável"
-              />
-            </div>
-          </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-3">
+          <div>
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <Card className="p-4">
@@ -255,15 +158,15 @@ const Dashboard: React.FC<DashboardProps> = ({ setorManager, onRefresh }) => {
                                                selectedSector?.setor === setor;
                               
                               return (
-                                <button
-                                  key={setor}
-                                  onClick={() => handleSectorClick(bloco, pavimento, setor)}
-                                  className={`
-                                    sector-card text-left text-sm p-3 min-h-[60px] flex flex-col justify-between
-                                    ${sectorData?.status || 'pending'}
-                                    ${isSelected ? 'ring-2 ring-primary' : ''}
-                                  `}
-                                >
+                                 <button
+                                   key={setor}
+                                   onClick={() => handleSectorClick(bloco, pavimento, setor)}
+                                   className={`
+                                     sector-card text-left text-sm p-3 min-h-[60px] flex flex-col justify-between
+                                     ${sectorData?.status || 'pending'}
+                                     hover:opacity-80 transition-opacity
+                                   `}
+                                 >
                                   <span className="font-medium">{setor}</span>
                                   {getStatusBadge(sectorData?.status || 'pending')}
                                 </button>
@@ -278,91 +181,17 @@ const Dashboard: React.FC<DashboardProps> = ({ setorManager, onRefresh }) => {
               </div>
             </Card>
           </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Action Panel */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Painel de Ações</h3>
-              
-              {selectedSector && (
-                <div className="space-y-4 mb-6">
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground">Setor Selecionado:</p>
-                    <p className="font-medium">{selectedSector.setor}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedSector.bloco} - {selectedSector.pavimento}
-                    </p>
-                    <div className="mt-2">
-                      {getStatusBadge(selectedSector.status)}
-                    </div>
-                  </div>
-
-                  {selectedSector.status === 'completed' && (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-sm font-medium text-green-800">Concluído em:</p>
-                      <p className="text-sm text-green-700">
-                        {selectedSector.checkoutTime && 
-                          new Date(selectedSector.checkoutTime).toLocaleString('pt-BR')
-                        }
-                      </p>
-                      {selectedSector.executor && (
-                        <p className="text-sm text-green-700">
-                          Executor: {selectedSector.executor}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {getActionButton()}
-            </Card>
-
-            {/* Today's Summary */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Resumo do Dia</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Atividades hoje:</span>
-                  <span className="font-semibold">{todayRecords.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Concluídos:</span>
-                  <span className="font-semibold text-green-600">
-                    {todayRecords.filter(r => r.status === 'completed').length}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Em andamento:</span>
-                  <span className="font-semibold text-blue-600">
-                    {todayRecords.filter(r => r.status === 'in-progress').length}
-                  </span>
-                </div>
-              </div>
-            </Card>
-
-            {/* Legend */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Legenda</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-orange-200 border border-orange-300 rounded"></div>
-                  <span className="text-sm">Pendente</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-blue-200 border border-blue-300 rounded"></div>
-                  <span className="text-sm">Em Andamento</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-green-200 border border-green-300 rounded"></div>
-                  <span className="text-sm">Concluído</span>
-                </div>
-              </div>
-            </Card>
-          </div>
         </div>
       </div>
+
+      {/* Modal do Setor */}
+      <SectorModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        sector={selectedSector}
+        setorManager={setorManager}
+        onUpdate={onRefresh}
+      />
     </div>
   );
 };
