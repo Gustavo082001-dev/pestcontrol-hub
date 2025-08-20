@@ -18,6 +18,9 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'inter': ['Inter', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -26,7 +29,8 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					hover: 'hsl(var(--primary-hover))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -61,6 +65,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				status: {
+					pending: 'hsl(var(--pending))',
+					'pending-foreground': 'hsl(var(--pending-foreground))',
+					'pending-light': 'hsl(var(--pending-light))',
+					'in-progress': 'hsl(var(--in-progress))',
+					'in-progress-foreground': 'hsl(var(--in-progress-foreground))',
+					'in-progress-light': 'hsl(var(--in-progress-light))',
+					completed: 'hsl(var(--completed))',
+					'completed-foreground': 'hsl(var(--completed-foreground))',
+					'completed-light': 'hsl(var(--completed-light))',
 				}
 			},
 			borderRadius: {
