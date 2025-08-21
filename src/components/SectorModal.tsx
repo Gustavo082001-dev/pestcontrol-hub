@@ -2,8 +2,8 @@ import React, { useState, useRef } from 'react';
 import { Camera, X, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { SetorManager, type SectorData } from '../lib/hospitalData';
 
 interface SectorModalProps {
@@ -36,6 +36,29 @@ const SectorModal: React.FC<SectorModalProps> = ({
   const [stream, setStream] = useState<MediaStream | null>(null);
 
   const currentDateTime = new Date().toLocaleString('pt-BR');
+
+  // Listas de opções para os dropdowns
+  const dedetizadorOptions = [
+    'João Silva',
+    'Maria Santos',
+    'Pedro Costa',
+    'Ana Oliveira',
+    'Carlos Ferreira',
+    'Lucia Rodrigues',
+    'Roberto Lima',
+    'Fernanda Alves'
+  ];
+
+  const acompanhanteOptions = [
+    'Dr. Paulo Mendes',
+    'Enf. Carmen Torres',
+    'Enf. Ricardo Gomes',
+    'Dr. Julia Castro',
+    'Enf. Marcos Pereira',
+    'Dr. Sofia Barbosa',
+    'Enf. Diego Nascimento',
+    'Dr. Beatriz Rocha'
+  ];
 
   const startCamera = async () => {
     try {
@@ -144,24 +167,34 @@ const SectorModal: React.FC<SectorModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="dedetizador">Dedetizador do Dia *</Label>
-                <Input
-                  id="dedetizador"
-                  value={dedetizador}
-                  onChange={(e) => setDedetizador(e.target.value)}
-                  placeholder="Nome do dedetizador"
-                  className="w-full"
-                />
+                <Select value={dedetizador} onValueChange={setDedetizador}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o dedetizador" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dedetizadorOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="acompanhante">Acompanhante Responsável *</Label>
-                <Input
-                  id="acompanhante"
-                  value={acompanhante}
-                  onChange={(e) => setAcompanhante(e.target.value)}
-                  placeholder="Nome do acompanhante"
-                  className="w-full"
-                />
+                <Select value={acompanhante} onValueChange={setAcompanhante}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o acompanhante" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {acompanhanteOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
