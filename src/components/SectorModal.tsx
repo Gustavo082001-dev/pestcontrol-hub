@@ -118,19 +118,11 @@ const SectorModal: React.FC<SectorModalProps> = ({
       return;
     }
 
-    // Salvar as fotos no localStorage associadas ao setor
-    const sectorKey = `${sector.bloco}-${sector.pavimento}-${sector.setor}`;
-    const sectorPhotos = {
-      photos,
-      dedetizador,
-      acompanhante,
-      timestamp: new Date()
-    };
-    
-    localStorage.setItem(`sector-photos-${sectorKey}`, JSON.stringify(sectorPhotos));
+    // Converter fotos para array de strings (dataURL)
+    const photoUrls = photos.map(photo => photo.dataUrl);
 
-    // Marcar setor como concluído
-    setorManager.completeSetor(sector.bloco, sector.pavimento, sector.setor, dedetizador, acompanhante);
+    // Marcar setor como concluído com as fotos
+    setorManager.completeSetor(sector.bloco, sector.pavimento, sector.setor, dedetizador, acompanhante, photoUrls);
     
     onUpdate();
     stopCamera();

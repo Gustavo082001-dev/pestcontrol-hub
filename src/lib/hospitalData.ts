@@ -35,6 +35,7 @@ export interface SectorData {
   executor?: string;
   responsavel?: string;
   duration?: number; // em minutos
+  photos?: string[]; // Array de URLs das imagens
 }
 
 export interface Statistics {
@@ -148,7 +149,7 @@ export class SetorManager {
     return false;
   }
 
-  completeSetor(bloco: string, pavimento: string, setor: string, executor: string, responsavel: string): boolean {
+  completeSetor(bloco: string, pavimento: string, setor: string, executor: string, responsavel: string, photos?: string[]): boolean {
     const key = this.getSectorKey(bloco, pavimento, setor);
     const sectorData = this.sectors.get(key);
     
@@ -161,7 +162,8 @@ export class SetorManager {
         checkoutTime: now,
         executor,
         responsavel,
-        duration: 0
+        duration: 0,
+        photos: photos || []
       });
       this.saveToStorage();
       return true;
@@ -181,7 +183,23 @@ export class SetorManager {
         checkoutTime: undefined,
         executor: undefined,
         responsavel: undefined,
-        duration: undefined
+        duration: undefined,
+        photos: undefined
+      });
+      this.saveToStorage();
+      return true;
+    }
+    return false;
+  }
+
+  addPhotosToSetor(bloco: string, pavimento: string, setor: string, photos: string[]): boolean {
+    const key = this.getSectorKey(bloco, pavimento, setor);
+    const sectorData = this.sectors.get(key);
+    
+    if (sectorData) {
+      this.sectors.set(key, {
+        ...sectorData,
+        photos: [...(sectorData.photos || []), ...photos]
       });
       this.saveToStorage();
       return true;

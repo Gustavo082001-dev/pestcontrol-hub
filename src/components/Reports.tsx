@@ -1,9 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Download, Printer, Filter, Calendar, Building, User } from 'lucide-react';
+import { Search, Download, Filter, Calendar, Building, User, FileText, Image } from 'lucide-react';
 import { SetorManager, type SectorData, type SectorStatus, hospitalData } from '../lib/hospitalData';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import ImageViewer from './ImageViewer';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface ReportsProps {
   setorManager: SetorManager;
@@ -27,6 +30,12 @@ const Reports: React.FC<ReportsProps> = ({ setorManager }) => {
     executor: '',
     status: ''
   });
+
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [selectedSectorImages, setSelectedSectorImages] = useState<{
+    images: string[];
+    sectorInfo: { bloco: string; pavimento: string; setor: string };
+  } | null>(null);
 
   const filteredRecords = useMemo(() => {
     return setorManager.getFilteredRecords({
@@ -54,94 +63,152 @@ const Reports: React.FC<ReportsProps> = ({ setorManager }) => {
     });
   };
 
-  const exportToCSV = () => {
-    const csvContent = setorManager.exportToCSV(filteredRecords);
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `relatorio-dedetizacao-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const exportToPDF = async () => {
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    let yPosition = 20;
+
+    // Header
+    pdf.setFontSize(20);
+    pdf.setTextColor(30, 64, 175); // Primary blue
+    pdf.text('Relatório de Dedetização', 20, yPosition);
+    yPosition += 8;
+
+    pdf.setFontSize(14);
+    pdf.setTextColor(100, 116, 139); // Muted color
+    pdf.text('Complexo Hospitalar - Sistema de Controle', 20, yPosition);
+    yPosition += 15;
+
+    // Summary section
+    pdf.setFontSize(12);
+    pdf.setTextColor(0, 0, 0);
+    const stats = {
+      total: filteredRecords.length,
+      completed: filteredRecords.filter(r => r.status === 'completed').length,
+      inProgress: filteredRecords.filter(r => r.status === 'in-progress').length,
+      pending: filteredRecords.filter(r => r.status === 'pending').length
+    };
+
+    pdf.text(`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`, 20, yPosition);
+    yPosition += 6;
+    pdf.text(`Total de Registros: ${stats.total}`, 20, yPosition);
+    pdf.text(`Concluídos: ${stats.completed}`, 70, yPosition);
+    pdf.text(`Em Andamento: ${stats.inProgress}`, 120, yPosition);
+    pdf.text(`Pendentes: ${stats.pending}`, 170, yPosition);
+    yPosition += 15;
+
+    // Table headers
+    const headers = ['Bloco', 'Pavimento', 'Setor', 'Status', 'Executor', 'Data/Hora'];
+    const colWidths = [25, 25, 40, 25, 35, 35];
+    let xPosition = 20;
+
+    pdf.setFillColor(245, 245, 245);
+    pdf.rect(20, yPosition - 4, pageWidth - 40, 8, 'F');
+    
+    pdf.setFontSize(10);
+    pdf.setTextColor(0, 0, 0);
+    headers.forEach((header, index) => {
+      pdf.text(header, xPosition, yPosition);
+      xPosition += colWidths[index];
+    });
+    yPosition += 10;
+
+    // Table data
+    for (const record of filteredRecords) {
+      if (yPosition > pageHeight - 30) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+
+      xPosition = 20;
+      const rowData = [
+        record.bloco,
+        record.pavimento,
+        record.setor.length > 15 ? record.setor.substring(0, 15) + '...' : record.setor,
+        record.status === 'completed' ? 'Concluído' : 
+        record.status === 'in-progress' ? 'Em And.' : 'Pendente',
+        record.executor?.substring(0, 12) || '-',
+        record.checkinTime ? new Date(record.checkinTime).toLocaleDateString('pt-BR') : '-'
+      ];
+
+      rowData.forEach((data, index) => {
+        pdf.text(String(data), xPosition, yPosition);
+        xPosition += colWidths[index];
+      });
+
+      // Add images if available
+      if (record.photos && record.photos.length > 0) {
+        yPosition += 6;
+        let imageY = yPosition;
+        const imageSize = 20;
+        const imagesPerRow = Math.floor((pageWidth - 40) / (imageSize + 5));
+        
+        for (let i = 0; i < Math.min(record.photos.length, 6); i++) {
+          if (yPosition > pageHeight - imageSize - 10) {
+            pdf.addPage();
+            yPosition = 20;
+            imageY = yPosition;
+          }
+
+          const imageX = 20 + (i % imagesPerRow) * (imageSize + 5);
+          if (i % imagesPerRow === 0 && i > 0) {
+            imageY += imageSize + 5;
+          }
+
+          try {
+            // Convert image to appropriate format for PDF
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = document.createElement('img');
+            img.crossOrigin = 'anonymous';
+            
+            await new Promise<void>((resolve) => {
+              img.onload = () => {
+                canvas.width = 200;
+                canvas.height = 200;
+                ctx?.drawImage(img, 0, 0, 200, 200);
+                const imgData = canvas.toDataURL('image/jpeg', 0.7);
+                pdf.addImage(imgData, 'JPEG', imageX, imageY, imageSize, imageSize);
+                resolve();
+              };
+              img.src = record.photos[i];
+            });
+          } catch (error) {
+            console.warn('Error adding image to PDF:', error);
+            // Add placeholder text instead
+            pdf.setFontSize(8);
+            pdf.text(`Img ${i + 1}`, imageX, imageY + imageSize / 2);
+          }
+        }
+        
+        if (record.photos.length > 6) {
+          pdf.setFontSize(8);
+          pdf.text(`+${record.photos.length - 6} mais imagens`, 20, imageY + imageSize + 8);
+        }
+        
+        yPosition = imageY + imageSize + 10;
+      } else {
+        yPosition += 8;
+      }
+    }
+
+    // Save PDF
+    pdf.save(`relatorio-dedetizacao-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
-  const printReport = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const printContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Relatório de Dedetização</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1 { color: #1e40af; border-bottom: 2px solid #1e40af; padding-bottom: 10px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f5f5f5; font-weight: bold; }
-            tr:nth-child(even) { background-color: #f9f9f9; }
-            .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-            .status.completed { background-color: #dcfce7; color: #166534; }
-            .status.in-progress { background-color: #dbeafe; color: #1e40af; }
-            .status.pending { background-color: #fed7aa; color: #9a3412; }
-            .summary { margin-bottom: 20px; }
-            .summary-item { display: inline-block; margin-right: 30px; }
-          </style>
-        </head>
-        <body>
-          <h1>Relatório de Dedetização - Complexo Hospitalar</h1>
-          
-          <div class="summary">
-            <div class="summary-item"><strong>Data do Relatório:</strong> ${new Date().toLocaleDateString('pt-BR')}</div>
-            <div class="summary-item"><strong>Total de Registros:</strong> ${filteredRecords.length}</div>
-            <div class="summary-item"><strong>Concluídos:</strong> ${filteredRecords.filter(r => r.status === 'completed').length}</div>
-            <div class="summary-item"><strong>Em Andamento:</strong> ${filteredRecords.filter(r => r.status === 'in-progress').length}</div>
-            <div class="summary-item"><strong>Pendentes:</strong> ${filteredRecords.filter(r => r.status === 'pending').length}</div>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th>Bloco</th>
-                <th>Pavimento</th>
-                <th>Setor</th>
-                <th>Status</th>
-                <th>Executor</th>
-                <th>Responsável</th>
-                <th>Início</th>
-                <th>Fim</th>
-                <th>Duração</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filteredRecords.map(record => `
-                <tr>
-                  <td>${record.bloco}</td>
-                  <td>${record.pavimento}</td>
-                  <td>${record.setor}</td>
-                  <td><span class="status ${record.status}">${
-                    record.status === 'completed' ? 'Concluído' :
-                    record.status === 'in-progress' ? 'Em Andamento' : 'Pendente'
-                  }</span></td>
-                  <td>${record.executor || '-'}</td>
-                  <td>${record.responsavel || '-'}</td>
-                  <td>${record.checkinTime ? new Date(record.checkinTime).toLocaleString('pt-BR') : '-'}</td>
-                  <td>${record.checkoutTime ? new Date(record.checkoutTime).toLocaleString('pt-BR') : '-'}</td>
-                  <td>${record.duration ? `${record.duration}min` : '-'}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
-
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.print();
+  const viewSectorImages = (record: SectorData) => {
+    if (record.photos && record.photos.length > 0) {
+      setSelectedSectorImages({
+        images: record.photos,
+        sectorInfo: {
+          bloco: record.bloco,
+          pavimento: record.pavimento,
+          setor: record.setor
+        }
+      });
+      setImageViewerOpen(true);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -306,13 +373,9 @@ const Reports: React.FC<ReportsProps> = ({ setorManager }) => {
             </div>
             
             <div className="flex gap-2">
-              <Button onClick={exportToCSV} variant="outline" className="no-print">
-                <Download className="w-4 h-4 mr-2" />
-                Exportar CSV
-              </Button>
-              <Button onClick={printReport} variant="outline" className="no-print">
-                <Printer className="w-4 h-4 mr-2" />
-                Imprimir
+              <Button onClick={exportToPDF} variant="outline" className="no-print">
+                <FileText className="w-4 h-4 mr-2" />
+                Exportar PDF
               </Button>
             </div>
           </div>
@@ -368,6 +431,7 @@ const Reports: React.FC<ReportsProps> = ({ setorManager }) => {
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Início</th>
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Fim</th>
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Duração</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Imagens</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -403,6 +467,21 @@ const Reports: React.FC<ReportsProps> = ({ setorManager }) => {
                           {formatDuration(record.duration)}
                         </span>
                       </td>
+                      <td className="py-3 px-4">
+                        {record.photos && record.photos.length > 0 ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => viewSectorImages(record)}
+                            className="flex items-center gap-1"
+                          >
+                            <Image className="w-4 h-4" />
+                            {record.photos.length}
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -410,6 +489,19 @@ const Reports: React.FC<ReportsProps> = ({ setorManager }) => {
             </div>
           )}
         </Card>
+
+        {/* Image Viewer Modal */}
+        {selectedSectorImages && (
+          <ImageViewer
+            isOpen={imageViewerOpen}
+            onClose={() => {
+              setImageViewerOpen(false);
+              setSelectedSectorImages(null);
+            }}
+            images={selectedSectorImages.images}
+            sectorInfo={selectedSectorImages.sectorInfo}
+          />
+        )}
       </div>
     </div>
   );
