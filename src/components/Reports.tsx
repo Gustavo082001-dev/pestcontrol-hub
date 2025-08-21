@@ -428,9 +428,8 @@ const Reports: React.FC<ReportsProps> = ({ setorManager }) => {
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Executor</th>
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Responsável</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Início</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Fim</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Duração</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Data</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Horário</th>
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Imagens</th>
                   </tr>
                 </thead>
@@ -457,15 +456,10 @@ const Reports: React.FC<ReportsProps> = ({ setorManager }) => {
                       <td className="py-3 px-4">{record.executor || '-'}</td>
                       <td className="py-3 px-4">{record.responsavel || '-'}</td>
                       <td className="py-3 px-4 text-sm">
-                        {formatDateTime(record.checkinTime)}
+                        {record.checkinTime ? new Date(record.checkinTime).toLocaleDateString('pt-BR') : '-'}
                       </td>
                       <td className="py-3 px-4 text-sm">
-                        {formatDateTime(record.checkoutTime)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="font-mono text-sm">
-                          {formatDuration(record.duration)}
-                        </span>
+                        {record.checkinTime ? new Date(record.checkinTime).toLocaleTimeString('pt-BR') : '-'}
                       </td>
                       <td className="py-3 px-4">
                         {record.photos && record.photos.length > 0 ? (
