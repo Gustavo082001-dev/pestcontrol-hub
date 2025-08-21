@@ -99,8 +99,8 @@ const Reports: React.FC<ReportsProps> = ({ setorManager }) => {
     yPosition += 15;
 
     // Table headers
-    const headers = ['Bloco', 'Pavimento', 'Setor', 'Status', 'Executor', 'Data/Hora'];
-    const colWidths = [25, 25, 40, 25, 35, 35];
+    const headers = ['Bloco', 'Pavimento', 'Setor', 'Status', 'Executor', 'Responsável', 'Data', 'Horário'];
+    const colWidths = [18, 22, 28, 18, 22, 22, 20, 20];
     let xPosition = 20;
 
     pdf.setFillColor(245, 245, 245);
@@ -125,15 +125,23 @@ const Reports: React.FC<ReportsProps> = ({ setorManager }) => {
       const rowData = [
         record.bloco,
         record.pavimento,
-        record.setor.length > 15 ? record.setor.substring(0, 15) + '...' : record.setor,
+        record.setor.length > 12 ? record.setor.substring(0, 12) + '...' : record.setor,
         record.status === 'completed' ? 'Concluído' : 
         record.status === 'in-progress' ? 'Em And.' : 'Pendente',
-        record.executor?.substring(0, 12) || '-',
-        record.checkinTime ? new Date(record.checkinTime).toLocaleDateString('pt-BR') : '-'
+        record.executor?.substring(0, 10) || '-',
+        record.responsavel?.substring(0, 10) || '-',
+        record.checkinTime ? new Date(record.checkinTime).toLocaleDateString('pt-BR') : '-',
+        record.checkinTime ? new Date(record.checkinTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-'
       ];
 
       rowData.forEach((data, index) => {
-        pdf.text(String(data), xPosition, yPosition);
+        const text = String(data);
+        // Truncate text if it's too long for the column
+        const maxWidth = colWidths[index] - 2;
+        const truncatedText = pdf.getTextWidth(text) > maxWidth ? 
+          text.substring(0, Math.floor(text.length * maxWidth / pdf.getTextWidth(text))) + '...' : text;
+        
+        pdf.text(truncatedText, xPosition, yPosition);
         xPosition += colWidths[index];
       });
 
@@ -249,24 +257,24 @@ const Reports: React.FC<ReportsProps> = ({ setorManager }) => {
   const blocosOptions = Object.keys(hospitalData);
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-background p-3 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Relatórios</h1>
-          <p className="text-muted-foreground">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Relatórios</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Análise detalhada das atividades de dedetização
           </p>
         </div>
 
         {/* Filters Panel */}
-        <Card className="p-6 mb-6">
+        <Card className="p-4 sm:p-6 mb-4 sm:mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Filter className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-semibold">Filtros</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 <Calendar className="w-4 h-4 inline mr-1" />
@@ -355,58 +363,60 @@ const Reports: React.FC<ReportsProps> = ({ setorManager }) => {
             </div>
           </div>
 
-          <div className="flex gap-3">
-            <Button onClick={clearFilters} variant="outline">
-              Limpar Filtros
+          <div className="flex gap-2 sm:gap-3">
+            <Button onClick={clearFilters} variant="outline" size="sm" className="sm:size-default">
+              <span className="hidden sm:inline">Limpar Filtros</span>
+              <span className="sm:hidden">Limpar</span>
             </Button>
           </div>
         </Card>
 
         {/* Results */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-semibold">Resultados</h2>
-              <p className="text-sm text-muted-foreground">
+        <Card className="p-4 sm:p-6">
+          <div className="flex items-start justify-between mb-4 gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl font-semibold">Resultados</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">
                 {filteredRecords.length} registro(s) encontrado(s)
               </p>
             </div>
             
             <div className="flex gap-2">
-              <Button onClick={exportToPDF} variant="outline" className="no-print">
-                <FileText className="w-4 h-4 mr-2" />
-                Exportar PDF
+              <Button onClick={exportToPDF} variant="outline" size="sm" className="no-print sm:size-default">
+                <FileText className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Exportar PDF</span>
+                <span className="sm:hidden">PDF</span>
               </Button>
             </div>
           </div>
 
           {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-primary">{filteredRecords.length}</div>
-              <div className="text-sm text-muted-foreground">Total de Registros</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="bg-muted/50 p-3 sm:p-4 rounded-lg">
+              <div className="text-xl sm:text-2xl font-bold text-primary">{filteredRecords.length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Total de Registros</div>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">
+            <div className="bg-green-50 p-3 sm:p-4 rounded-lg">
+              <div className="text-xl sm:text-2xl font-bold text-green-600">
                 {filteredRecords.filter(r => r.status === 'completed').length}
               </div>
-              <div className="text-sm text-muted-foreground">Concluídos</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Concluídos</div>
             </div>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">
+            <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">
                 {filteredRecords.filter(r => r.status === 'in-progress').length}
               </div>
-              <div className="text-sm text-muted-foreground">Em Andamento</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Em Andamento</div>
             </div>
-            <div className="bg-orange-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-orange-600">
+            <div className="bg-orange-50 p-3 sm:p-4 rounded-lg">
+              <div className="text-xl sm:text-2xl font-bold text-orange-600">
                 {filteredRecords.filter(r => r.status === 'pending').length}
               </div>
-              <div className="text-sm text-muted-foreground">Pendentes</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Pendentes</div>
             </div>
           </div>
 
-          {/* Results Table */}
+          {/* Results Table/Cards */}
           {filteredRecords.length === 0 ? (
             <div className="text-center py-12">
               <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -418,69 +428,137 @@ const Reports: React.FC<ReportsProps> = ({ setorManager }) => {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Bloco</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Pavimento</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Setor</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Executor</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Responsável</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Data</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Horário</th>
-                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Imagens</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRecords
-                    .sort((a, b) => {
-                      const timeA = a.checkinTime ? new Date(a.checkinTime).getTime() : 0;
-                      const timeB = b.checkinTime ? new Date(b.checkinTime).getTime() : 0;
-                      return timeB - timeA;
-                    })
-                    .map((record, index) => (
-                    <tr 
-                      key={`${record.bloco}-${record.pavimento}-${record.setor}`}
-                      className={`border-b border-border hover:bg-muted/50 ${
-                        index % 2 === 0 ? 'bg-card' : 'bg-muted/20'
-                      }`}
-                    >
-                      <td className="py-3 px-4 font-medium">{record.bloco}</td>
-                      <td className="py-3 px-4">{record.pavimento}</td>
-                      <td className="py-3 px-4 font-medium">{record.setor}</td>
-                      <td className="py-3 px-4">
-                        {getStatusBadge(record.status)}
-                      </td>
-                      <td className="py-3 px-4">{record.executor || '-'}</td>
-                      <td className="py-3 px-4">{record.responsavel || '-'}</td>
-                      <td className="py-3 px-4 text-sm">
-                        {record.checkinTime ? new Date(record.checkinTime).toLocaleDateString('pt-BR') : '-'}
-                      </td>
-                      <td className="py-3 px-4 text-sm">
-                        {record.checkinTime ? new Date(record.checkinTime).toLocaleTimeString('pt-BR') : '-'}
-                      </td>
-                      <td className="py-3 px-4">
-                        {record.photos && record.photos.length > 0 ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => viewSectorImages(record)}
-                            className="flex items-center gap-1"
-                          >
-                            <Image className="w-4 h-4" />
-                            {record.photos.length}
-                          </Button>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">-</span>
-                        )}
-                      </td>
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Bloco</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Pavimento</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Setor</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Executor</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Responsável</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Data</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Horário</th>
+                      <th className="text-left py-3 px-4 font-medium text-muted-foreground">Imagens</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredRecords
+                      .sort((a, b) => {
+                        const timeA = a.checkinTime ? new Date(a.checkinTime).getTime() : 0;
+                        const timeB = b.checkinTime ? new Date(b.checkinTime).getTime() : 0;
+                        return timeB - timeA;
+                      })
+                      .map((record, index) => (
+                      <tr 
+                        key={`${record.bloco}-${record.pavimento}-${record.setor}`}
+                        className={`border-b border-border hover:bg-muted/50 ${
+                          index % 2 === 0 ? 'bg-card' : 'bg-muted/20'
+                        }`}
+                      >
+                        <td className="py-3 px-4 font-medium">{record.bloco}</td>
+                        <td className="py-3 px-4">{record.pavimento}</td>
+                        <td className="py-3 px-4 font-medium">{record.setor}</td>
+                        <td className="py-3 px-4">
+                          {getStatusBadge(record.status)}
+                        </td>
+                        <td className="py-3 px-4">{record.executor || '-'}</td>
+                        <td className="py-3 px-4">{record.responsavel || '-'}</td>
+                        <td className="py-3 px-4 text-sm">
+                          {record.checkinTime ? new Date(record.checkinTime).toLocaleDateString('pt-BR') : '-'}
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          {record.checkinTime ? new Date(record.checkinTime).toLocaleTimeString('pt-BR') : '-'}
+                        </td>
+                        <td className="py-3 px-4">
+                          {record.photos && record.photos.length > 0 ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => viewSectorImages(record)}
+                              className="flex items-center gap-1"
+                            >
+                              <Image className="w-4 h-4" />
+                              {record.photos.length}
+                            </Button>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-4">
+                {filteredRecords
+                  .sort((a, b) => {
+                    const timeA = a.checkinTime ? new Date(a.checkinTime).getTime() : 0;
+                    const timeB = b.checkinTime ? new Date(b.checkinTime).getTime() : 0;
+                    return timeB - timeA;
+                  })
+                  .map((record, index) => (
+                  <Card 
+                    key={`${record.bloco}-${record.pavimento}-${record.setor}`}
+                    className="p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg truncate">{record.setor}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {record.bloco} • {record.pavimento}
+                        </p>
+                      </div>
+                      <div className="ml-2 flex-shrink-0">
+                        {getStatusBadge(record.status)}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Executor:</span>
+                        <p className="font-medium truncate">{record.executor || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Responsável:</span>
+                        <p className="font-medium truncate">{record.responsavel || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Data:</span>
+                        <p className="font-medium">
+                          {record.checkinTime ? new Date(record.checkinTime).toLocaleDateString('pt-BR') : '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Horário:</span>
+                        <p className="font-medium">
+                          {record.checkinTime ? new Date(record.checkinTime).toLocaleTimeString('pt-BR') : '-'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {record.photos && record.photos.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => viewSectorImages(record)}
+                          className="w-full flex items-center justify-center gap-2"
+                        >
+                          <Image className="w-4 h-4" />
+                          Ver {record.photos.length} imagem{record.photos.length > 1 ? 's' : ''}
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            </>
           )}
         </Card>
 

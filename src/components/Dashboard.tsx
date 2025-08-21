@@ -57,100 +57,100 @@ const Dashboard: React.FC<DashboardProps> = ({ setorManager, onRefresh }) => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b border-border p-6">
+      <header className="bg-card border-b border-border p-4 sm:p-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <Shield className="w-8 h-8 text-primary" />
+          <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="p-2 sm:p-3 bg-primary/10 rounded-lg">
+              <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Sistema de Dedetização</h1>
-              <p className="text-muted-foreground">Controle e Monitoramento Hospitalar</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground truncate">Sistema de Dedetização</h1>
+              <p className="text-sm sm:text-base text-muted-foreground hidden sm:block">Controle e Monitoramento Hospitalar</p>
             </div>
           </div>
 
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6">
         <div className="grid grid-cols-1 gap-6">
           {/* Main Content */}
           <div>
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Activity className="w-5 h-5 text-blue-600" />
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+              <Card className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                    <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total</p>
-                    <p className="text-2xl font-bold">{stats.total}</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Concluídos</p>
-                    <p className="text-2xl font-bold">{stats.completed}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-muted-foreground">Total</p>
+                    <p className="text-lg sm:text-2xl font-bold">{stats.total}</p>
                   </div>
                 </div>
               </Card>
 
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Clock className="w-5 h-5 text-blue-600" />
+              <Card className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg flex-shrink-0">
+                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Em Andamento</p>
-                    <p className="text-2xl font-bold">{stats.inProgress}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-muted-foreground">Concluídos</p>
+                    <p className="text-lg sm:text-2xl font-bold">{stats.completed}</p>
                   </div>
                 </div>
               </Card>
 
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <Users className="w-5 h-5 text-orange-600" />
+              <Card className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Pendentes</p>
-                    <p className="text-2xl font-bold">{stats.pending}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-muted-foreground">Em Andamento</p>
+                    <p className="text-lg sm:text-2xl font-bold">{stats.inProgress}</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg flex-shrink-0">
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-muted-foreground">Pendentes</p>
+                    <p className="text-lg sm:text-2xl font-bold">{stats.pending}</p>
                   </div>
                 </div>
               </Card>
             </div>
 
             {/* Progress Bar */}
-            <Card className="p-6 mb-6">
+            <Card className="p-4 sm:p-6 mb-6">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold">Progresso Geral</h3>
-                <span className="text-2xl font-bold text-primary">{stats.completionPercentage}%</span>
+                <h3 className="text-base sm:text-lg font-semibold">Progresso Geral</h3>
+                <span className="text-xl sm:text-2xl font-bold text-primary">{stats.completionPercentage}%</span>
               </div>
-              <Progress value={stats.completionPercentage} className="h-3" />
-              <p className="text-sm text-muted-foreground mt-2">
+              <Progress value={stats.completionPercentage} className="h-2 sm:h-3" />
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
                 {stats.completed} de {stats.total} setores concluídos
               </p>
             </Card>
 
             {/* Hospital Map */}
-            <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-4">Mapa do Complexo Hospitalar</h3>
-              <div className="space-y-6">
+            <Card className="p-4 sm:p-6">
+              <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Mapa do Complexo Hospitalar</h3>
+              <div className="space-y-4 sm:space-y-6">
                 {Object.entries(hospitalData).map(([bloco, pavimentos]) => (
-                  <div key={bloco} className="border border-border rounded-lg p-4">
-                    <h4 className="text-lg font-semibold mb-4 text-primary">{bloco}</h4>
-                    <div className="space-y-4">
+                  <div key={bloco} className="border border-border rounded-lg p-3 sm:p-4">
+                    <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-primary">{bloco}</h4>
+                    <div className="space-y-3 sm:space-y-4">
                       {Object.entries(pavimentos).map(([pavimento, setores]) => (
                         <div key={pavimento}>
-                          <h5 className="font-medium text-foreground mb-2">{pavimento}</h5>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                          <h5 className="text-sm sm:text-base font-medium text-foreground mb-2">{pavimento}</h5>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                             {setores.map((setor) => {
                               const sectorData = setorManager.getSector(bloco, pavimento, setor);
                               const isSelected = selectedSector?.bloco === bloco && 
@@ -162,13 +162,15 @@ const Dashboard: React.FC<DashboardProps> = ({ setorManager, onRefresh }) => {
                                    key={setor}
                                    onClick={() => handleSectorClick(bloco, pavimento, setor)}
                                    className={`
-                                     sector-card text-left text-sm p-3 min-h-[60px] flex flex-col justify-between
+                                     sector-card text-left text-xs sm:text-sm p-2 sm:p-3 min-h-[50px] sm:min-h-[60px] flex flex-col justify-between
                                      ${sectorData?.status || 'pending'}
                                      hover:opacity-80 transition-opacity
                                    `}
                                  >
-                                  <span className="font-medium">{setor}</span>
-                                  {getStatusBadge(sectorData?.status || 'pending')}
+                                  <span className="font-medium truncate">{setor}</span>
+                                  <div className="mt-1">
+                                    {getStatusBadge(sectorData?.status || 'pending')}
+                                  </div>
                                 </button>
                               );
                             })}

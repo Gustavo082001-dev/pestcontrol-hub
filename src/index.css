@@ -190,6 +190,62 @@
     @apply h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-500 ease-out;
   }
 
+  /* Mobile Responsive Styles */
+  @media (max-width: 640px) {
+    /* Mobile navigation improvements */
+    .mobile-nav-overlay {
+      @apply fixed inset-0 bg-black/20 z-10;
+    }
+    
+    /* Sector cards mobile optimization */
+    .sector-card {
+      @apply text-xs min-h-[45px];
+    }
+    
+    /* Badge adjustments for mobile */
+    .status-pending,
+    .status-in-progress,
+    .status-completed {
+      @apply text-xs px-1.5 py-0.5;
+    }
+    
+    /* Mobile typography */
+    h1 {
+      @apply text-xl;
+    }
+    
+    h2 {
+      @apply text-lg;
+    }
+    
+    h3 {
+      @apply text-base;
+    }
+    
+    /* Mobile spacing */
+    .mobile-spacing {
+      @apply px-3 py-2;
+    }
+  }
+  
+  /* Tablet Responsive Styles */
+  @media (min-width: 641px) and (max-width: 1024px) {
+    .sector-card {
+      @apply text-sm min-h-[55px];
+    }
+  }
+  
+  /* Touch device improvements */
+  @media (hover: none) and (pointer: coarse) {
+    .sector-card {
+      @apply min-h-[48px] active:scale-95;
+    }
+    
+    button {
+      @apply active:scale-95 transition-transform;
+    }
+  }
+
   /* Print Styles */
   @media print {
     .no-print {

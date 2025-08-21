@@ -34,6 +34,7 @@ const SectorModal: React.FC<SectorModalProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
   const currentDateTime = new Date().toLocaleString('pt-BR');
 
@@ -62,17 +63,105 @@ const SectorModal: React.FC<SectorModalProps> = ({
 
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
-      setStream(mediaStream);
+      // Verificar se o navegador suporta getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Seu navegador não suporta acesso à câmera.');
+        return;
+      }
+      
+      // Reset do estado de carregamento
+      setIsVideoLoaded(false);
       setIsCameraActive(true);
+      
+      let mediaStream: MediaStream;
+      
+      // Tentar primeiro com câmera traseira, depois qualquer câmera disponível
+      try {
+        console.log('Tentando acessar câmera traseira...');
+        mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'environment',
+            width: { min: 640, ideal: 1280 },
+            height: { min: 480, ideal: 720 }
+          } 
+        });
+        console.log('Câmera traseira ativada com sucesso');
+      } catch (envError) {
+        console.log('Câmera traseira não disponível, tentando qualquer câmera:', envError);
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia({ 
+            video: {
+              width: { min: 640, ideal: 1280 },
+              height: { min: 480, ideal: 720 }
+            }
+          });
+          console.log('Câmera frontal ativada com sucesso');
+        } catch (frontError) {
+          console.log('Tentando configuração básica de câmera:', frontError);
+          mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          console.log('Câmera básica ativada');
+        }
+      }
+      
+      setStream(mediaStream);
+      
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+        const video = videoRef.current;
+        
+        // Limpar handlers anteriores
+        video.onloadedmetadata = null;
+        video.oncanplay = null;
+        video.onplaying = null;
+        
+        video.srcObject = mediaStream;
+        
+        // Aguardar o carregamento dos metadados
+        video.onloadedmetadata = () => {
+          console.log('Video metadata loaded, dimensions:', video.videoWidth, 'x', video.videoHeight);
+          if (video.videoWidth > 0 && video.videoHeight > 0) {
+            setIsVideoLoaded(true);
+          }
+          video.play().catch(err => {
+            console.error('Erro ao reproduzir vídeo:', err);
+          });
+        };
+        
+        // Handler para quando o vídeo pode ser reproduzido
+        video.oncanplay = () => {
+          console.log('Video can play');
+          setIsVideoLoaded(true);
+        };
+        
+        // Handler para quando o vídeo está realmente reproduzindo
+        video.onplaying = () => {
+          console.log('Video is playing');
+          setIsVideoLoaded(true);
+        };
+        
+        // Tentar reproduzir após um pequeno delay
+        setTimeout(() => {
+          video.play().catch(err => {
+            console.error('Erro ao reproduzir vídeo (delayed):', err);
+          });
+        }, 100);
       }
     } catch (error) {
       console.error('Erro ao acessar câmera:', error);
-      alert('Erro ao acessar a câmera. Verifique as permissões.');
+      let errorMessage = 'Erro ao acessar a câmera.';
+      
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage = 'Permissão negada. Por favor, permita o acesso à câmera.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage = 'Nenhuma câmera encontrada no dispositivo.';
+        } else if (error.name === 'NotReadableError') {
+          errorMessage = 'Câmera está sendo usada por outro aplicativo.';
+        }
+      }
+      
+      alert(errorMessage);
+      setIsCameraActive(false);
+      setIsVideoLoaded(false);
     }
   };
 
@@ -82,9 +171,16 @@ const SectorModal: React.FC<SectorModalProps> = ({
       setStream(null);
     }
     setIsCameraActive(false);
+    setIsVideoLoaded(false);
   };
 
   const takePhoto = () => {
+    // Verificar se já atingiu o limite de 5 fotos
+    if (photos.length >= 5) {
+      alert('Limite máximo de 5 fotos atingido.');
+      return;
+    }
+
     if (videoRef.current && canvasRef.current) {
       const canvas = canvasRef.current;
       const video = videoRef.current;
@@ -209,9 +305,13 @@ const SectorModal: React.FC<SectorModalProps> = ({
                   </Button>
                 ) : (
                   <div className="flex gap-2">
-                    <Button onClick={takePhoto} size="sm">
+                    <Button 
+                      onClick={takePhoto} 
+                      size="sm"
+                      disabled={photos.length >= 5}
+                    >
                       <Camera className="w-4 h-4 mr-2" />
-                      Capturar
+                      Capturar {photos.length >= 5 ? '(Limite atingido)' : `(${photos.length}/5)`}
                     </Button>
                     <Button onClick={stopCamera} variant="outline" size="sm">
                       Fechar Câmera
@@ -222,13 +322,44 @@ const SectorModal: React.FC<SectorModalProps> = ({
 
               {/* Câmera */}
               {isCameraActive && (
-                <div className="relative">
+                <div className="relative bg-gray-900 rounded-lg border p-4">
                   <video
                     ref={videoRef}
                     autoPlay
                     playsInline
-                    className="w-full max-w-md mx-auto rounded-lg border"
+                    muted
+                    className="w-full h-64 rounded-lg"
+                    style={{ 
+                      minHeight: '200px',
+                      maxWidth: '100%',
+                      objectFit: 'cover',
+                      backgroundColor: '#000'
+                    }}
+                    onError={(e) => {
+                      console.error('Video error:', e);
+                      alert('Erro no elemento de vídeo');
+                    }}
+                    onPlaying={() => {
+                      console.log('Video is playing');
+                      setIsVideoLoaded(true);
+                    }}
                   />
+                  {/* Indicador de carregamento */}
+                  {!isVideoLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center text-white text-sm bg-black bg-opacity-75 rounded-lg">
+                      <div className="text-center">
+                        <div className="animate-pulse mb-2">📷</div>
+                        <div>Carregando câmera...</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Debug info */}
+                  {isVideoLoaded && (
+                    <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                      Câmera ativa
+                    </div>
+                  )}
                 </div>
               )}
 
